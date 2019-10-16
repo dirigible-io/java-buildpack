@@ -1,6 +1,7 @@
-# Encoding: utf-8
+# frozen_string_literal: true
+
 # Cloud Foundry Java Buildpack
-# Copyright 2013 the original author or authors.
+# Copyright 2013-2019 the original author or authors.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -16,10 +17,12 @@
 
 require 'spec_helper'
 require 'component_helper'
+require 'internet_availability_helper'
 require 'java_buildpack/framework/new_relic_agent'
+require 'java_buildpack/util/tokenized_version'
 
 describe JavaBuildpack::Framework::NewRelicAgent do
-  include_context 'component_helper'
+  include_context 'with component help'
 
   it 'does not detect without newrelic-n/a service' do
     expect(component.detect).to be_nil
@@ -28,7 +31,7 @@ describe JavaBuildpack::Framework::NewRelicAgent do
   context do
 
     before do
-      allow(services).to receive(:one_service?).with(/newrelic/, 'licenseKey').and_return(true)
+      allow(services).to receive(:one_service?).with(/newrelic/, %w[licenseKey license_key]).and_return(true)
     end
 
     it 'detects with newrelic-n/a service' do
@@ -51,25 +54,83 @@ describe JavaBuildpack::Framework::NewRelicAgent do
       expect(sandbox + 'newrelic.yml').to exist
     end
 
+    it 'ignores unspecified extensions',
+       cache_fixture: 'stub-new-relic-agent.jar' do
+
+      component.compile
+
+      expect(sandbox + 'extensions').not_to exist
+    end
+
     it 'updates JAVA_OPTS' do
       allow(services).to receive(:find_service).and_return('credentials' => { 'licenseKey' => 'test-license-key' })
+      allow(java_home).to receive(:java_8_or_later?).and_return(JavaBuildpack::Util::TokenizedVersion.new('1.7.0_u10'))
 
       component.release
 
       expect(java_opts).to include("-javaagent:$PWD/.java-buildpack/new_relic_agent/new_relic_agent-#{version}.jar")
       expect(java_opts).to include('-Dnewrelic.home=$PWD/.java-buildpack/new_relic_agent')
       expect(java_opts).to include('-Dnewrelic.config.license_key=test-license-key')
-      expect(java_opts).to include("-Dnewrelic.config.app_name='test-application-name'")
-      expect(java_opts).to include('-Dnewrelic.config.log_file_path=$PWD/.java-buildpack/new_relic_agent/logs')
+      expect(java_opts).to include('-Dnewrelic.config.app_name=test-application-name')
+      expect(java_opts).to include('-Dnewrelic.config.log_file_name=STDOUT')
+    end
+
+    it 'updates JAVA_OPTS with additional options' do
+      allow(services).to receive(:find_service).and_return('credentials' => { 'licenseKey' => 'test-license-key',
+                                                                              'license_key' => 'different-license-key',
+                                                                              'app_name' => 'different-name',
+                                                                              'foo' => 'bar' })
+      allow(java_home).to receive(:java_8_or_later?).and_return(JavaBuildpack::Util::TokenizedVersion.new('1.7.0_u10'))
+
+      component.release
+
+      expect(java_opts).to include('-Dnewrelic.config.license_key=different-license-key')
+      expect(java_opts).to include('-Dnewrelic.config.app_name=different-name')
+      expect(java_opts).to include('-Dnewrelic.config.foo=bar')
     end
 
     it 'updates JAVA_OPTS on Java 8' do
       allow(services).to receive(:find_service).and_return('credentials' => { 'licenseKey' => 'test-license-key' })
-      allow(java_home).to receive(:version).and_return(%w(1 8 0 u10))
+      allow(java_home).to receive(:java_8_or_later?).and_return(JavaBuildpack::Util::TokenizedVersion.new('1.8.0_u10'))
 
       component.release
 
       expect(java_opts).to include('-Dnewrelic.enable.java.8=true')
+    end
+
+  end
+
+  describe JavaBuildpack::Framework::NewRelicAgentExtensions do
+    include_context 'with component help'
+
+    it 'does not support if repository_root not specified' do
+      expect(component).not_to be_supports
+    end
+
+    context 'when enabled' do
+      let(:configuration) { { 'repository_root' => 'test-repository-root' } }
+
+      it 'supports if repository_root specified' do
+        expect(component).to be_supports
+      end
+
+      it 'downloads extensions TAR',
+         cache_fixture: 'stub-new-relic-extensions.tar.gz' do
+
+        component.compile
+
+        expect(sandbox + 'extensions/extension-example.xml').to exist
+      end
+
+      it 'does guarantee that internet access is available when downloading',
+         cache_fixture: 'stub-new-relic-extensions.tar.gz' do
+
+        expect_any_instance_of(JavaBuildpack::Util::Cache::InternetAvailability)
+          .to receive(:available).with(true, 'The New Relic Extensions download location is always accessible').twice
+
+        component.compile
+      end
+
     end
 
   end

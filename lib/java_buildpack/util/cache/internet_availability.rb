@@ -1,6 +1,7 @@
-# Encoding: utf-8
+# frozen_string_literal: true
+
 # Cloud Foundry Java Buildpack
-# Copyright (c) 2013 the original author or authors.
+# Copyright 2013-2019 the original author or authors.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -47,7 +48,7 @@ module JavaBuildpack
         #
         # @param [Boolean] available whether the internet is available
         # @param [String, nil] message an optional message to be printed when the availability is set
-        # @yields an environment with internet availability temporarily overridden if block given
+        # @yield an environment with internet availability temporarily overridden if block given
         def available(available, message = nil)
           @monitor.synchronize do
             if block_given?

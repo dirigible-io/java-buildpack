@@ -1,6 +1,7 @@
-# Encoding: utf-8
+# frozen_string_literal: true
+
 # Cloud Foundry Java Buildpack
-# Copyright 2013 the original author or authors.
+# Copyright 2013-2019 the original author or authors.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -43,8 +44,7 @@ module JavaBuildpack
       end
 
       # (see JavaBuildpack::Component::BaseComponent#release)
-      def release
-      end
+      def release; end
 
       protected
 
@@ -53,14 +53,19 @@ module JavaBuildpack
         true
       end
 
-      private
-
       TOMCAT_8 = JavaBuildpack::Util::TokenizedVersion.new('8.0.0').freeze
 
       private_constant :TOMCAT_8
 
+      # Checks whether Tomcat instance is Tomcat 7 compatible
+      def tomcat_7_compatible
+        @version < TOMCAT_8
+      end
+
+      private
+
       def configure_jasper
-        return unless @version < TOMCAT_8
+        return unless tomcat_7_compatible
 
         document = read_xml server_xml
         server   = REXML::XPath.match(document, '/Server').first
@@ -77,7 +82,7 @@ module JavaBuildpack
         document = read_xml context_xml
         context  = REXML::XPath.match(document, '/Context').first
 
-        if @version < TOMCAT_8
+        if tomcat_7_compatible
           context.add_attribute 'allowLinking', true
         else
           context.add_element 'Resources', 'allowLinking' => true
@@ -87,7 +92,7 @@ module JavaBuildpack
       end
 
       def expand(file)
-        with_timing "Expanding Tomcat to #{@droplet.sandbox.relative_path_from(@droplet.root)}" do
+        with_timing "Expanding #{@component_name} to #{@droplet.sandbox.relative_path_from(@droplet.root)}" do
           FileUtils.mkdir_p @droplet.sandbox
           shell "tar xzf #{file.path} -C #{@droplet.sandbox} --strip 1 --exclude webapps 2>&1"
 
@@ -98,7 +103,8 @@ module JavaBuildpack
       end
 
       def root
-        tomcat_webapps + 'ROOT'
+        context_path = (@configuration['context_path'] || 'ROOT').sub(%r{^/}, '').gsub(%r{/}, '#')
+        tomcat_webapps + context_path
       end
 
       def tomcat_datasource_jar

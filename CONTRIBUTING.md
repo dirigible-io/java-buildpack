@@ -1,4 +1,4 @@
-_Have something you’d like to contribute to the buildpack? We welcome pull requests, but ask that you carefully read this document first to understand how best to submit them; what kind of changes are likely to be accepted; and what to expect from the Cloud Foundry Java Experience team when evaluating your submission._
+_Have something you'd like to contribute to the buildpack? We welcome pull requests, but ask that you carefully read this document first to understand how best to submit them; what kind of changes are likely to be accepted; and what to expect from the Cloud Foundry Java Experience team when evaluating your submission._
 
 _Please refer back to this document as a checklist before issuing any pull request; this will save time for everyone!_
 
@@ -41,7 +41,7 @@ Please carefully follow the whitespace and formatting conventions already presen
 ## Add Apache license header to all new classes
 ```ruby
 # Cloud Foundry Java Buildpack
-# Copyright 2013 the original author or authors.
+# Copyright 2013-2016 the original author or authors.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -58,16 +58,16 @@ Please carefully follow the whitespace and formatting conventions already presen
 require ...;
 ```
 ## Update Apache license header to modified files as necessary
-Always check the date range in the license header. For example, if you've modified a file in 2014 whose header still reads
+Always check the date range in the license header. For example, if you've modified a file in 2016 whose header still reads
 
 ```ruby
  # Copyright 2013 the original author or authors.
 ```
 
-then be sure to update it to 2014 appropriately
+then be sure to update it to 2016 appropriately
 
 ```ruby
- # Copyright 2013-2014 the original author or authors.
+ # Copyright 2013-2016 the original author or authors.
 ```
 
 ## Submit RSpec test cases for all behavior changes

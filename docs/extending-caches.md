@@ -39,32 +39,36 @@ end
 ```
 
 ## Configuration
-For general information on configuring the buildpack, refer to [Configuration and Extension][].
+For general information on configuring the buildpack, including how to specify configuration values through environment variables, refer to [Configuration and Extension][].
 
 Caching can be configured by modifying the [`config/cache.yml`][] file in the buildpack fork.
 
 | Name | Description
 | ---- | -----------
 | `remote_downloads` | This property can take the value `enabled` or `disabled`. <p>The default value of `enabled` means that the buildpack will check the internet connection and remember the result for the remainder of the buildpack invocation. If the internet is available, it will then be used to download files. If the internet is not available, cache will be consulted instead. <p>Alternatively, the property may be set to `disabled` which avoids the check for an internet connection, does not attempt downloads, and consults the cache instead.
+| `client_authentication.certificate_location` | The path to a PEM or DER encoded certificate to use for SSL client certificate authentication
+| `client_authentication.private_key_location` | The path to a PEM or DER encoded DSA or RSA private key to use for SSL client certificate authentication
+| `client_authentication.private_key_password` | The password for the private key to use for SSL client certificate authentication
 
 ## `JavaBuildpack::Util::Cache::DownloadCache`
 The [`DownloadCache`][] is the most generic of the two caches.  It allows you to create a cache that persists files any that write access is available.  The constructor signature looks the following:
 
 ```ruby
-# Creates an instance of the cache that is backed by the filesystem rooted at +cache_root+
+# Creates an instance of the cache that is backed by a number of filesystem locations.  The first argument
+# (+mutable_cache_root+) is the only location that downloaded files will be stored in.
 #
-# @param [String] cache_root the filesystem root for downloaded files to be cached in
-def initialize(cache_root = Dir.tmpdir)
+# @param [Pathname] mutable_cache_root the filesystem location in which find cached files in.  This will also be
+#                                      the location that all downloaded files are written to.
+# @param [Pathname] immutable_cache_roots other filesystem locations to find cached files in.  No files will be
+#                                         written to these locations.
+def initialize(mutable_cache_root = Pathname.new(Dir.tmpdir), *immutable_cache_roots)
 ```
 
 ## `JavaBuildpack::Util::Cache::ApplicationCache`
 The [`ApplicationCache`][] is a cache that persists files into the application cache passed to the `compile` script.  It examines `ARGV[1]` for the cache location and configures itself accordingly.
 
 ```ruby
-# Creates an instance that is configured to use the application cache.  The application cache location is defined by
-# the second argument (<tt>ARGV[1]</tt>) to the +compile+ script.
-#
-# @raise if the second argument (<tt>ARGV[1]</tt>) to the +compile+ script is +nil+
+# Creates an instance of the cache that is backed by the the application cache
 def initialize
 ```
 

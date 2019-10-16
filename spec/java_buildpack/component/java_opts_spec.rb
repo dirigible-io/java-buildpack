@@ -1,6 +1,7 @@
-# Encoding: utf-8
+# frozen_string_literal: true
+
 # Cloud Foundry Java Buildpack
-# Copyright 2013 the original author or authors.
+# Copyright 2013-2019 the original author or authors.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -19,7 +20,7 @@ require 'droplet_helper'
 require 'java_buildpack/component/java_opts'
 
 describe JavaBuildpack::Component::JavaOpts do
-  include_context 'droplet_helper'
+  include_context 'with droplet help'
 
   let(:opts) { described_class.new droplet.root }
 
@@ -27,6 +28,24 @@ describe JavaBuildpack::Component::JavaOpts do
     opts.add_javaagent droplet.sandbox + 'test-java-agent'
 
     expect(opts).to include('-javaagent:$PWD/.java-buildpack/java_opts/test-java-agent')
+  end
+
+  it 'adds a qualified javaagent with properties to the collection' do
+    opts.add_javaagent_with_props(droplet.sandbox + 'test-java-agent', 'key1' => 'value1', 'key2' => 'value2')
+
+    expect(opts).to include('-javaagent:$PWD/.java-buildpack/java_opts/test-java-agent=key1=value1,key2=value2')
+  end
+
+  it 'adds a qualified agentpath to the collection' do
+    opts.add_agentpath droplet.sandbox + 'test-agentpath'
+
+    expect(opts).to include('-agentpath:$PWD/.java-buildpack/java_opts/test-agentpath')
+  end
+
+  it 'adds a qualified agentpath with properties to the collection' do
+    opts.add_agentpath_with_props(droplet.sandbox + 'test-agentpath', 'key1' => 'value1', 'key2' => 'value2')
+
+    expect(opts).to include('-agentpath:$PWD/.java-buildpack/java_opts/test-agentpath=key1=value1,key2=value2')
   end
 
   it 'adds a qualified system property to the collection' do
@@ -39,6 +58,12 @@ describe JavaBuildpack::Component::JavaOpts do
     opts.add_system_property 'test-key', 'test-value'
 
     expect(opts).to include('-Dtest-key=test-value')
+  end
+
+  it 'adds a bootclasspath property to the collection' do
+    opts.add_bootclasspath_p droplet.sandbox + 'test-bootclasspath'
+
+    expect(opts).to include('-Xbootclasspath/p:$PWD/.java-buildpack/java_opts/test-bootclasspath')
   end
 
   it 'adds a qualified option to the collection' do

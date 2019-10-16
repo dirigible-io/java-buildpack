@@ -1,6 +1,7 @@
-# Encoding: utf-8
+# frozen_string_literal: true
+
 # Cloud Foundry Java Buildpack
-# Copyright 2013 the original author or authors.
+# Copyright 2013-2019 the original author or authors.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -38,7 +39,7 @@ module JavaBuildpack
         jar application
       end
 
-      # The version of of the JAR file used by the application
+      # The version of the JAR file used by the application
       #
       # @param [Application] application the application to search
       # @return [String] the version of the JAR file used by the application
@@ -49,7 +50,7 @@ module JavaBuildpack
       private
 
       def jar(application)
-        (application.root + '**/lib/*.jar').glob.find { |jar| jar.to_s =~ @pattern }
+        (application.root + '**/*.jar').glob.find { |jar| jar.to_s =~ @pattern }
       end
 
     end

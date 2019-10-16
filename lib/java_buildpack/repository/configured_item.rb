@@ -1,6 +1,7 @@
-# Encoding: utf-8
+# frozen_string_literal: true
+
 # Cloud Foundry Java Buildpack
-# Copyright 2013 the original author or authors.
+# Copyright 2013-2019 the original author or authors.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -35,7 +36,7 @@ module JavaBuildpack
         # @param [Hash] configuration the configuration
         # @option configuration [String] :repository_root the root directory of the repository
         # @option configuration [String] :version the version of the file to resolve
-        # @param [Block, nil] version_validator an optional version validation block
+        # @yield [Block] optional version_validator to yield to
         # @return [String] the URI of the chosen version of the file
         # @return [JavaBuildpack::Util::TokenizedVersion] the chosen version of the file
         def find_item(component_name, configuration)
@@ -46,15 +47,15 @@ module JavaBuildpack
 
           index = index(repository_root)
           index.find_item version
-        rescue => e
+        rescue StandardError => e
           raise RuntimeError, "#{component_name} error: #{e.message}", e.backtrace
         end
 
         private
 
-        KEY_REPOSITORY_ROOT = 'repository_root'.freeze
+        KEY_REPOSITORY_ROOT = 'repository_root'
 
-        KEY_VERSION = 'version'.freeze
+        KEY_VERSION = 'version'
 
         private_constant :KEY_REPOSITORY_ROOT, :KEY_VERSION
 
@@ -64,8 +65,8 @@ module JavaBuildpack
 
         def repository_root(configuration)
           unless configuration.key? KEY_REPOSITORY_ROOT
-            fail "A repository root must be specified as a key-value pair of '#{KEY_REPOSITORY_ROOT}'' to the URI of " \
-                 'the repository.'
+            raise "A repository root must be specified as a key-value pair of '#{KEY_REPOSITORY_ROOT}' to the URI " \
+                  'of the repository.'
           end
 
           configuration[KEY_REPOSITORY_ROOT]
